@@ -1,4 +1,4 @@
-name: teeth-test
+name: teeth3ds-boundary-eval
 channels:
   - conda-forge
 dependencies:
@@ -12,4 +12,5 @@ dependencies:
   - pip:
       - torch
       - torchvision
+      - ruff
 
