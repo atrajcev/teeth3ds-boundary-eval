@@ -48,9 +48,50 @@ def load_scan(path: Path | str) -> MeshData:
     )
 
     raw_xyz = read_obj_vertices(obj_path)  # read vertices from obj
-
+    mesh = trimesh.Trimesh(
+        vertices=raw_xyz, processing=False
+    )  # create trimesh object, processing = False to avoid trimesh trying to fix the mesh, labels could reorder due to merges
     labels = np.asarray(data_dict["labels"], dtype=np.int64)  # grab labels
     instances = np.asarray(data_dict["instances"], dtype=np.int64)  # grab instances
+
+    if (
+        len(labels) != len(mesh.vertices)
+    ):  # vertex count matches label count, if not, something is wrong with the scan or the labels
+        raise ValueError(
+            f"mismatched lengths: labels = {len(labels)} vs vertices = {len(mesh.vertices)}"
+        )
+    if (
+        len(instances) != len(mesh.vertices)
+    ):  # vertex count matches instance count, if not, something is wrong with the scan or the instances
+        raise ValueError(
+            f"mismatched lengths: instances = {len(instances)} vs vertices = {len(mesh.vertices)}"
+        )
+    if (
+        np.any(labels < 0) or np.any(labels > 8)
+    ):  # labels should be in range [0, 8] for adult and baby teeth, if not, something is wrong with the labels
+        raise ValueError(f"labels out of range: {np.unique(labels)}")
+
+    if (
+        np.allclose(raw_xyz, mesh.vertices, atol=1e-6) is False
+    ):  # check if trimesh reordered the vertices, if so, something is wrong with the scan or the labels, 1e-6 is a small tolerance between floating point noise and scanner accuracy 0.01mm
+        raise ValueError(
+            "trimesh reordered the vertices, something is wrong with the scan or the labels"
+        )
+
+    if (
+        np.min(mesh.faces) == 0 & np.max(mesh.faces) == len(mesh.vertices) - 1
+    ):  # check if trimesh converted from 1-based index to 0-based
+        raise ValueError(
+            "trimesh not ordered 0 to N-1"
+        )
+
+    return MeshData(
+        mesh=mesh,
+        labels=labels,
+        instances=instances,
+        patient_id=patient_id,
+        jaw_type=jaw_type,
+    )
 
 
 def read_obj_vertices(path: Path | str) -> np.ndarray:
@@ -72,7 +113,8 @@ def read_obj_vertices(path: Path | str) -> np.ndarray:
     vertices = []
     for line in obj_path.read_text().splitlines():
         if line.startswith("v "):  # vertex line
-            vertices.append([float(v) for v in line.split()[1:4]])  # grab x,y,z coordinates
+            vertices.append(
+                [float(v) for v in line.split()[1:4]]
+            )  # grab x,y,z coordinates
     vertices = np.array(vertices, dtype=np.float64)
-    mesh = trimesh.Trimesh(vertices=vertices)
-    return mesh.vertices
+    return vertices
