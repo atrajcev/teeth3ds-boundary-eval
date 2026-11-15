@@ -10,6 +10,8 @@ class MeshData:
     mesh: trimesh.Trimesh
     labels: np.ndarray
     instances: np.ndarray
+    patient_id: str
+    jaw_type: str
 
 
 def load_scan(path: Path | str) -> MeshData:
@@ -45,5 +47,32 @@ def load_scan(path: Path | str) -> MeshData:
         f"mismatched jaw: {data_dict['jaw']} vs {jaw_type}"
     )
 
+    raw_xyz = read_obj_vertices(obj_path)  # read vertices from obj
+
     labels = np.asarray(data_dict["labels"], dtype=np.int64)  # grab labels
     instances = np.asarray(data_dict["instances"], dtype=np.int64)  # grab instances
+
+
+def read_obj_vertices(path: Path | str) -> np.ndarray:
+    """Read the vertices from an .obj file.
+
+    Args:
+        path (Path | str): The path to the .obj file. str or Path object.
+
+    Returns:
+        np.ndarray: The vertices of the mesh as a numpy array of shape (N, 3).
+
+    Raises:
+        FileNotFoundError: If the .obj file does not exist.
+    """
+    obj_path = Path(path)
+
+    if not obj_path.exists():
+        raise FileNotFoundError(f"{obj_path} doesnt exist")
+    vertices = []
+    for line in obj_path.read_text().splitlines():
+        if line.startswith("v "):  # vertex line
+            vertices.append([float(v) for v in line.split()[1:4]])  # grab x,y,z coordinates
+    vertices = np.array(vertices, dtype=np.float64)
+    mesh = trimesh.Trimesh(vertices=vertices)
+    return mesh.vertices
