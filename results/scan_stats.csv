@@ -1,0 +1,2 @@
+patient_id,jaw_type,num_teeth,num_vertices,num_faces,num_orphaned_vertices,edge_length_median,edge_length_p95,bounding_box_x,bounding_box_y,bounding_box_z
+01F4JV8X,upper,14,120522,240900,0,0.16605369171587808,0.31465263277521477,76.81115618999999,67.61135748000001,41.16338109999998
