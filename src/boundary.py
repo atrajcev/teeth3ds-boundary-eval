@@ -14,14 +14,16 @@ def boundary_vertices(mesh, labels, tooth) -> np.ndarray:
     tooth_end = np.where(in_a,vertex_a, vertex_b)
     return np.unique(tooth_end[crossing])
 
-def peel_rings(mesh,labels,tooth,k):
+def peel_rings(mesh,labels,tooth,k) -> np.ndarray:
     """Peel k rings of vertices from the boundary of a tooth.
 
     Args:
         mesh (trimesh.Trimesh): The mesh to peel.
-        label (np.ndarray): The labels for each vertex.
+        labels (np.ndarray): The labels for each vertex.
         tooth (int): The tooth id to peel.
         k (int): The number of rings to peel.
+    Returns:
+        np.ndarray: The labels after peeling k rings of vertices from the boundary of the tooth.
     """
     pred = labels.copy()
     for _ in range(k):
@@ -29,7 +31,7 @@ def peel_rings(mesh,labels,tooth,k):
         pred[ring] = 0
     return pred
 
-def dice(true,pred,tooth):
+def dice(true,pred,tooth) -> float:
     """Compute the dice score for a tooth.
 
     Args:
@@ -44,6 +46,25 @@ def dice(true,pred,tooth):
     intersection = np.sum(true_mask & pred_mask)
     dice_score = 2 * intersection / (np.sum(true_mask) + np.sum(pred_mask))
     return dice_score
+
+def boundary_shift_mm(mesh,true,pred,tooth) -> tuple[float,float,float]:
+    """Compute the median, p95 and max boundary shift in mm for a tooth.
+
+    Args:
+        mesh (trimesh.Trimesh): The mesh to compute the boundary shift on.
+        true (np.ndarray): The ground truth labels.
+        pred (np.ndarray): The predicted labels.
+        tooth (int): The tooth id to compute the boundary shift for.
+    Returns:
+        float: The median boundary shift in mm for the tooth.
+        float: the p95 boundary shift in mm for the tooth
+        float: max dist in mm for the tooth
+    """
+    true_boundary = boundary_vertices(mesh,true,tooth)
+    pred_boundary = boundary_vertices(mesh,pred,tooth)
+    tree = scipy.spatial.cKDTree(mesh.vertices[true_boundary])
+    dist, _ = tree.query(mesh.vertices[pred_boundary])
+    return np.median(dist), np.percentile(dist,95), dist.max()
 
 if __name__ == "__main__":
     import argparse
@@ -68,7 +89,9 @@ if __name__ == "__main__":
     print(f"Boundary vertices count: {len(boundary_v)}, tooth total vertices: {(mesh_data.labels==args.tooth).sum()}")
     peel_1 = peel_rings(mesh_data.mesh, mesh_data.labels, args.tooth, 1)
     dice_score = dice(mesh_data.labels, peel_1, args.tooth)
-    
+    shift = boundary_shift_mm(mesh_data.mesh, mesh_data.labels, peel_1,args.tooth)
     print(f"After peeling 1 ring, tooth total vertices for tooth {args.tooth}: {(peel_1==args.tooth).sum()}")
     print(f"Dice score after peeling 1 ring for tooth {args.tooth}: {dice_score:.4f}")
+    print(f"Shift statistics along boundary for tooth {args.tooth}: {shift}")
 
+    
