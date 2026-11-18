@@ -6,7 +6,7 @@ Measuring tooth–gum boundary error in mm on Teeth3DS+ intraoral scans, where o
 
 Scan 01F4JV8X (upper) from [Teeth3DS+](https://osf.io/xctdy), Ben-Hamadou et al., [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/), rendered with tooth labels as colours.
 
-**Status:** loader and statistics over all 1,800 labelled scans. Phase 1 is done on one scan (an incisor and a molar): Dice compared with boundary error in mm. Phase 2, a small segmentation model, is next.
+**Status:** Loader and statistics over all 1,800 labelled scans. Phase 1 is done on one scan (an incisor and a molar): Dice compared with boundary error in mm. Phase 2, a small segmentation model, is next.
 
 ## Why
 
@@ -16,7 +16,7 @@ Segmentation is usually scored by an overlap score like Dice or F1. Scores depen
 
 ### Phase 1: Dice hides boundary error
 
-**At three peeled rings, Dice is still above 0.9 for both teeth, while the edge has moved 0.63 mm (incisor) and 0.72 mm (molar) at the 95th percentile. Dice also ranks the molar higher at every step, even though its edge moves even more.** Larger teeth have a smaller share of their vertices on the edge (4.0% for the molar against 5.4% for the incisor), so the same edge error has even less impact on Dice score.
+**At three peeled rings, Dice is still above 0.9 for both teeth, while the edge has moved 0.63 mm (incisor) and 0.72 mm (molar) at the 95th percentile. Dice also ranks the molar higher at every step, even though its edge moves more.** Larger teeth have a smaller share of their vertices on the edge (4.0% for the molar against 5.4% for the incisor), so the same edge error has even less impact on Dice score.
 
 ![Dice vs p95 boundary shift](docs/images/dice_vs_boundary.png)
 
@@ -56,7 +56,7 @@ For scan `01F4JV8X_upper`. Shift is the distance from each predicted boundary ve
 
 A mesh can only place a boundary to about one edge length. So boundary errors are meaningful down to about the median, 0.17 mm, on a typical scan, but only about 0.4 mm on the coarser group. Results should be reported separately for the two groups.
 
-The mesh appears to be densest where it matters. At the tooth 11 edge the spacing is about 0.11 mm, finer than the scan-wide median. The longest edges appear to be in the filled-in palate and base which has a visibily coarser appearance.
+The mesh appears to be densest where it matters. At the tooth 11 edge the spacing is about 0.11 mm, finer than the scan-wide median. The longest edges appear to be in the filled-in palate and base which has a visibly coarser appearance.
 
 ## Reproduce
 
@@ -89,9 +89,9 @@ python src/plot_phase1.py   # writes docs/images/dice_vs_boundary.png
 
 ## Design choices
 
-- **Labels are matched to vertices by position**, so meshes are loaded with `process=False` (no vertex merging or reordering). An independent parse of the OBJ's vertex lines is compared with the loaded mesh to prove that no reordering occured.
+- **Labels are matched to vertices by position**, so meshes are loaded with `process=False` (no vertex merging or reordering). An independent parse of the OBJ's vertex lines is compared with the loaded mesh to prove that no reordering occurred.
 - **Every scan is verified on load:**
-  - vertex, label and instance counts need agree
+  - vertex, label and instance counts agree
   - vertex order is unchanged
   - face indices are in range
   - every label is gum or an adult FDI code, Teeth3DS+ has only adult teeth codes
@@ -99,7 +99,7 @@ python src/plot_phase1.py   # writes docs/images/dice_vs_boundary.png
 - **Failure scans are recorded.** Each check raises a clear `ValueError` or `FileNotFoundError`. Batch runs log and skip only those expected bad-scan errors; anything else is a code bug and stops the run with a traceback.
 - **Boundary error is reported in mm** (median, p95, max), not in rings or vertices. This is due to mesh density varying across a jaw and between scans, so I measure the shift as a nearest-neighbour distance in mm instead of counting rings.
 - **Every result has a known answer to check against.** I check and compare the 0-ring row and the hand-computed Dice.
-- **One fixed colour per tooth code** A tooth has the same colour in every figure.
+- **One fixed colour per tooth code.** Teeth have the same colour in every figure.
 
 ## Limitations
 
