@@ -18,9 +18,8 @@ Segmentation is usually scored by an overlap score like Dice or F1. Scores depen
 
 **At three peeled rings, Dice is still above 0.9 for both teeth, while the edge has moved 0.63 mm (incisor) and 0.72 mm (molar) at the 95th percentile. Dice also ranks the molar higher at every step, even though its edge moves even more.** Larger teeth have a smaller share of their vertices on the edge (4.0% for the molar against 5.4% for the incisor), so the same edge error has even less impact on Dice score.
 
-<!-- TODO: add the plot once made
 ![Dice vs p95 boundary shift](docs/images/dice_vs_boundary.png)
--->
+
 
 For scan `01F4JV8X_upper`. Shift is the distance from each predicted boundary vertex (due to artificial peeling of boundary vertices) to the nearest true boundary vertex, in mm.
 
@@ -66,7 +65,7 @@ The mesh appears to be densest where it matters. At the tooth 11 edge the spacin
 conda env create -f environment.yml
 conda activate teeth3ds-boundary-eval
 
-environment.lock.yml is the exact Linux environment the results were produced with.
+# environment.lock.yml is the exact Linux environment the results were produced with.
 
 # 2. Data (not included in this repo, see "Data and licence")
 #    Download data_part_1.zip to data_part_7.zip from the Teeth3DS+ OSF project
@@ -85,6 +84,7 @@ python src/viz.py data/teeth3ds_full/upper/01F4JV8X/01F4JV8X_upper.obj --out res
 # 6. Phase 1: peel 0 to 3 rings off a tooth, writes results/boundary_stats_<tooth>.csv
 python src/boundary.py data/teeth3ds_full/upper/01F4JV8X/01F4JV8X_upper.obj --tooth 11
 python src/boundary.py data/teeth3ds_full/upper/01F4JV8X/01F4JV8X_upper.obj --tooth 16
+python src/plot_phase1.py   # writes docs/images/dice_vs_boundary.png
 ```
 
 ## Design choices
@@ -115,9 +115,11 @@ src/load_scan.py       load one scan and verify it
 src/dataset_stats.py   per-scan statistics over a folder of scans
 src/viz.py             colour a mesh by tooth label and export it
 src/boundary.py        boundary vertices, ring peeling, Dice, boundary shift in mm
+src/plot_phase1.py     Dice vs boundary-shift figure
 docs/images/           figures
 results/               small result tables (CSV)
 environment.yml        pinned environment
+environment.lock.yml   exact Linux environment
 ```
 
 ## Roadmap
