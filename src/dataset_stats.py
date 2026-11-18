@@ -1,7 +1,9 @@
-from load_scan import load_scan, MeshData
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+from load_scan import MeshData, load_scan
 
 
 def scan_stats(data: MeshData) -> dict:
@@ -75,7 +77,7 @@ def collect_stats(
     for obj_file in obj_files:  # read sorted rows of obj files
         try:
             data = load_scan(obj_file)
-        except Exception as e:
+        except (ValueError, FileNotFoundError) as e:
             failures.append((obj_file, str(e)))  # store failed scans with error message
             continue
         stats = scan_stats(data)

@@ -1,4 +1,4 @@
-tooth,peeled_rings,total_vertices_after_peel,dice_score,median_shift,p95_shift,max_shift
+tooth,peeled_rings,total_vertices_after_peel,dice_score,mm_median_shift,mm_p95_shift,mm_max_shift
 11,0,6011,1.0,0.0,0.0,0.0
 11,1,5685,0.9721272229822161,0.11067661831403353,0.2194631917903493,0.3210613223925113
 11,2,5371,0.9437708662800913,0.26310470550343185,0.4294958978046138,0.5636516941157603

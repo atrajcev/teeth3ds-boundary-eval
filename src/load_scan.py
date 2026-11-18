@@ -17,11 +17,12 @@ Load a scan and its labels + instances from the json file.
     Author: Aleksander Trajcevski
 """
 
-from pathlib import Path
-import numpy as np
-import trimesh
 import json
 from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import trimesh
 
 
 @dataclass
@@ -44,9 +45,12 @@ def load_scan(path: Path | str) -> MeshData:
         MeshData: The loaded mesh data.
 
     Raises:
-        FileNotFoundError: If the scan file or its corresponding json file does not exist.
-        AssertionError: If the patient ID or jaw type in the json file does not match the scan file name.
-        ValueError: If the number of labels or instances does not match the number of vertices in the mesh, or if the labels are out of range, or if trimesh reordered the vertices, or if trimesh converted from 1-based index to 0-based.
+        FileNotFoundError: If the scan file or its corresponding json file does not exist
+        ValueError: If the number of labels or instances does not match the number of vertices in the mesh,
+                    or if the labels are out of range,
+                    or if trimesh reordered the vertices,
+                    or if trimesh converted from 1-based index to 0-based
+                    or patient ID or jaw type doesn't match the file name
     """
     obj_path = Path(path)
 
@@ -60,12 +64,11 @@ def load_scan(path: Path | str) -> MeshData:
     with open(json_path) as f:
         data_dict = json.load(f)
     patient_id, jaw_type = obj_path.stem.split("_")  # grab jaw and patient
-    assert data_dict["id_patient"] == patient_id, (
-        f"mismatched id: {data_dict['id_patient']} vs {patient_id}"
-    )
-    assert data_dict["jaw"] == jaw_type, (
-        f"mismatched jaw: {data_dict['jaw']} vs {jaw_type}"
-    )
+    if data_dict["id_patient"] != patient_id:
+        raise ValueError(f"mismatched id: {data_dict['id_patient']} vs {patient_id}")
+
+    if data_dict["jaw"] != jaw_type:
+        raise ValueError(f"mismatched jaw: {data_dict['jaw']} vs {jaw_type}")
 
     raw_xyz = read_obj_vertices(
         obj_path
@@ -86,11 +89,11 @@ def load_scan(path: Path | str) -> MeshData:
         raise ValueError(
             f"mismatched lengths: instances = {len(instances)} vs vertices = {len(mesh.vertices)}"
         )
-    # labels should be 0 for gums and quadrants 1-8 and position 1-8 for adult and baby teeth, if not, something is wrong with the labels
+    # labels should be 0 for gums and quadrants 1-4 and position 1-8 for adult FDI codes only due to Teeth3DS+ dataset content, if not, something is wrong with the labels
     quadrants = labels // 10
     positions = labels % 10
     is_gum = labels == 0
-    is_tooth = (1 <= quadrants) & (quadrants <= 8) & (1 <= positions) & (positions <= 8)
+    is_tooth = (1 <= quadrants) & (quadrants <= 4) & (1 <= positions) & (positions <= 8)
     valid = is_gum | is_tooth
     if not valid.all():
         raise ValueError(
