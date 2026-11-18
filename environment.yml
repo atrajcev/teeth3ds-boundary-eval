@@ -3,14 +3,8 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - trimesh
-  - pandas
-  - numpy
-  - scipy
-  - matplotlib
-  - pip
-  - pip:
-      - torch
-      - torchvision
-      - ruff
-
+  - numpy=2.5.4
+  - scipy=1.18.1
+  - pandas=3.1.1
+  - matplotlib-base=3.11.2
+  - trimesh=5.2.1
