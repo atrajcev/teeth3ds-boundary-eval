@@ -2,6 +2,8 @@ import trimesh
 import numpy as np
 from load_scan import load_scan
 import scipy.spatial
+import pandas as pd
+from pathlib import Path
 def boundary_vertices(mesh, labels, tooth) -> np.ndarray:
     edges = mesh.edges_unique
     vertex_a = edges[:,0]
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "path",
-        type=str,
+        type=Path,
         help="The path to the scan file. The file should be a .obj file.",
     )
     parser.add_argument(
@@ -83,15 +85,30 @@ if __name__ == "__main__":
         help="Tooth id to evaluate",
         default = 11,
     )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None
+    )
     args = parser.parse_args()
+    if args.out is None:
+        args.out = f"results/boundary_stats_{args.tooth}.csv"
     mesh_data = load_scan(args.path)
+    if not np.any(mesh_data.labels==args.tooth):
+        raise ValueError(f"{args.tooth} tooth is missing in scan")
     boundary_v = boundary_vertices(mesh_data.mesh, mesh_data.labels, args.tooth)
     print(f"Boundary vertices count: {len(boundary_v)}, tooth total vertices: {(mesh_data.labels==args.tooth).sum()}")
-    peel_1 = peel_rings(mesh_data.mesh, mesh_data.labels, args.tooth, 1)
-    dice_score = dice(mesh_data.labels, peel_1, args.tooth)
-    shift = boundary_shift_mm(mesh_data.mesh, mesh_data.labels, peel_1,args.tooth)
-    print(f"After peeling 1 ring, tooth total vertices for tooth {args.tooth}: {(peel_1==args.tooth).sum()}")
-    print(f"Dice score after peeling 1 ring for tooth {args.tooth}: {dice_score:.4f}")
-    print(f"Shift statistics along boundary for tooth {args.tooth}: {shift}")
-
     
+    rows=[]
+    for i in range(4):
+        pred = peel_rings(mesh_data.mesh, mesh_data.labels, args.tooth, i)
+        dice_score = dice(mesh_data.labels, pred, args.tooth)
+        med,p95,mx=boundary_shift_mm(mesh_data.mesh, mesh_data.labels, pred,args.tooth)
+        rows.append({"tooth": args.tooth, "peeled_rings": i, "total_vertices_after_peel":(pred==args.tooth).sum(), "dice_score": dice_score, "median_shift":med, "p95_shift":p95,"max_shift":mx})
+    df = pd.DataFrame(rows)
+    print(df)
+    to_csv_path = Path(args.out)
+    to_csv_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    df.to_csv(to_csv_path, index=False)
+
